@@ -110,7 +110,7 @@ class UnifiedMetric(CometModel):
         dropout: float = 0.1,
         batch_size: int = 4,
         train_data: Optional[List[str]] = None,
-        validation_data: Optional[List[str]] = None,
+        validation_data: Union[Optional[List[str]], float] = None,
         hidden_sizes: List[int] = [3072, 1024],
         activations: str = "Tanh",
         final_activation: Optional[str] = None,
@@ -187,9 +187,14 @@ class UnifiedMetric(CometModel):
         """Initializes training and validation metrics"""
         # Train and Dev correlation metrics
         self.train_corr = RegressionMetrics(prefix="train")
-        self.val_corr = nn.ModuleList(
-            [RegressionMetrics(prefix=d) for d in self.hparams.validation_data]
-        )
+        if isinstance(self.hparams.validation_data, float):
+            self.val_corr = nn.ModuleList(
+                [RegressionMetrics(prefix=f"{self.hparams.validation_data}train")]
+            )
+        else:
+            self.val_corr = nn.ModuleList(
+                [RegressionMetrics(prefix=d) for d in self.hparams.validation_data]
+            )
         if self.hparams.word_level_training:
             self.label_encoder = LabelSet(self.hparams.error_labels)
             self.num_classes = len(self.label_encoder.labels_to_id)
@@ -598,7 +603,12 @@ class UnifiedMetric(CometModel):
             self.train_mcc.reset()
 
         val_metrics = []
-        for i in range(len(self.hparams.validation_data)):
+        if isinstance(self.hparams.validation_data, float):
+            num_val = 1
+        else:
+            num_val = len(self.hparams.validation_data)
+
+        for i in range(num_val):
             corr_metrics = self.val_corr[i].compute()
             self.val_corr[i].reset()
             if self.word_level:
@@ -613,7 +623,7 @@ class UnifiedMetric(CometModel):
             val_metrics.append(results)
 
         average_results = {"val_" + k.split("_")[-1]: [] for k in val_metrics[0].keys()}
-        for i in range(len(val_metrics)):
+        for i in range(num_val):
             for k, v in val_metrics[i].items():
                 average_results["val_" + k.split("_")[-1]].append(v)
 

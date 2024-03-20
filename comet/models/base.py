@@ -477,9 +477,19 @@ class CometModel(ptl.LightningModule, metaclass=abc.ABCMeta):
         if stage in (None, "fit"):
             train_dataset = self.read_training_data(self.hparams.train_data[0])
 
-            self.validation_sets = [
-                self.read_validation_data(d) for d in self.hparams.validation_data
-            ]
+            if isinstance(self.hparams.validation_data, float):
+                # Split train into train and validation if validation_data is a float
+                train_size = int(len(train_dataset) * (1 - self.hparams.validation_data))
+                val_size = len(train_dataset) - train_size
+                train_dataset, val_dataset = torch.utils.data.random_split(
+                    train_dataset, [train_size, val_size]
+                )
+                self.validation_sets = [val_dataset]
+            else:
+                # Load validation sets
+                self.validation_sets = [
+                    self.read_validation_data(d) for d in self.hparams.validation_data
+                ]
 
             self.first_epoch_total_steps = len(train_dataset) // (
                 self.hparams.batch_size * max(1, self.trainer.num_devices)

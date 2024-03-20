@@ -58,7 +58,7 @@ class XCOMETMetric(UnifiedMetric):
         dropout: float = 0.1,
         batch_size: int = 4,
         train_data: Optional[List[str]] = None,
-        validation_data: Optional[List[str]] = None,
+        validation_data: Union[Optional[List[str]], float] = None,
         hidden_sizes: List[int] = [2560, 1280],
         activations: str = "Tanh",
         final_activation: Optional[str] = None,

@@ -1,6 +1,6 @@
 class_path: pytorch_lightning.callbacks.model_checkpoint.ModelCheckpoint
 init_args:
-  dirpath: null
+  dirpath: models/mm+ptm.xlmr-l+p.1
   filename: '{epoch}-{step}-{val_kendall:.3f}'
   monitor: val_kendall
   verbose: True
