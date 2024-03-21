@@ -38,6 +38,7 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import (EarlyStopping, LearningRateMonitor,
                                          ModelCheckpoint)
 from pytorch_lightning.trainer.trainer import Trainer
+from pytorch_lightning.loggers import CSVLogger
 
 from comet.models import (RankingMetric, ReferencelessRegression,
                           RegressionMetric, UnifiedMetric)
@@ -88,6 +89,7 @@ def initialize_trainer(configs) -> Trainer:
     trainer_args = namespace_to_dict(configs.trainer.init_args)
     lr_monitor = LearningRateMonitor(logging_interval="step")
     trainer_args["callbacks"] = [early_stop_callback, checkpoint_callback, lr_monitor]
+    trainer_args["logger"] = CSVLogger(save_dir=namespace_to_dict(configs.model_checkpoint.init_args)["dirpath"])
     print("TRAINER ARGUMENTS: ")
     print(json.dumps(trainer_args, indent=4, default=lambda x: x.__dict__))
     trainer = Trainer(**trainer_args)
