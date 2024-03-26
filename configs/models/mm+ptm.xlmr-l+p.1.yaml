@@ -27,6 +27,8 @@ unified_metric:
     - 3072
     - 1024
     word_level_training: False
+    min_zscore: -1.9820798505893629
+    max_zscore: 0.8901959611657179
 trainer: ../trainer.yaml
 early_stopping: ../early_stopping.yaml
 model_checkpoint: ../model_ckpt/mm+ptm.xlmr-l+p.1.yaml
