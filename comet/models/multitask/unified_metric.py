@@ -120,6 +120,8 @@ class UnifiedMetric(CometModel):
         error_labels: List[str] = ["minor", "major"],
         cross_entropy_weights: Optional[List[float]] = None,
         load_pretrained_weights: bool = True,
+        min_zscore: float = None,
+        max_zscore: float = None,
     ) -> None:
         super().__init__(
             nr_frozen_epochs=nr_frozen_epochs,
@@ -162,6 +164,9 @@ class UnifiedMetric(CometModel):
         # precision and recall we can set it to another value.
         self.decoding_threshold = None
         self.init_losses()
+
+        self.min_zscore = min_zscore
+        self.max_zscore = max_zscore
 
     def set_input_weights_spans(self, weights: torch.Tensor):
         """Used to set input weights in another.
@@ -745,7 +750,7 @@ class UnifiedMetric(CometModel):
         if len(batch) == 3:
             predictions = [self.forward(**input_seq) for input_seq in batch]
             # Final score is the average of the 3 scores!
-            avg_scores = torch.stack([pred.score for pred in predictions], dim=0).mean(
+            avg_scores = torch.stack([self._min_max_norm(pred.score) for pred in predictions], dim=0).mean(
                 dim=0
             )
             batch_prediction = Prediction(
@@ -772,7 +777,7 @@ class UnifiedMetric(CometModel):
 
         else:
             model_output = self.forward(**batch[0])
-            batch_prediction = Prediction(scores=model_output.score)
+            batch_prediction = Prediction(scores=self._min_max_norm(model_output.score))
             if self.word_level:
                 mt_mask = batch[0]["label_ids"] != -1
                 mt_length = mt_mask.sum(dim=1)
@@ -788,3 +793,16 @@ class UnifiedMetric(CometModel):
                     metadata=Prediction(error_spans=error_spans),
                 )
         return batch_prediction
+
+    def _min_max_norm(self, score: torch.Tensor) -> torch.Tensor:
+        """Applies min-max normalization to the scores.
+
+        Args:
+            score (torch.Tensor): Score to be normalized.
+
+        Returns:
+            torch.Tensor: Normalized score.
+        """
+        if self.min_zscore is None or self.max_zscore is None:
+            return score
+        return (score - self.min_zscore) / (self.max_zscore - self.min_zscore)
