@@ -1,0 +1,34 @@
+unified_metric:
+  class_path: comet.models.UnifiedMetric
+  init_args:
+    nr_frozen_epochs: 0.3
+    keep_embeddings_frozen: True
+    optimizer: AdamW
+    encoder_learning_rate: 1.0e-06
+    learning_rate: 1.5e-05
+    encoder_model: XLM-RoBERTa
+    pretrained_model: xlm-roberta-large
+    sent_layer: mix
+    layer_norm: False
+    layer_transformation: sparsemax
+    layerwise_decay: 0.95
+    loss: mse
+    dropout: 0.1
+    batch_size: 4
+    activations: Tanh
+    input_segments:
+      - mt
+      - src
+      - ref
+    train_data:
+      - data/wmt-human-eval/reward_dataset.csv
+    validation_data: 0.1
+    hidden_sizes:
+    - 3072
+    - 1024
+    word_level_training: False
+    min_zscore: -1.8359497445108464
+    max_zscore: 0.8327298628095561
+trainer: ../trainer.yaml
+early_stopping: ../early_stopping.yaml
+model_checkpoint: ../model_ckpt/rm+ptm.xlmr-l+p.1.yaml
